@@ -35,7 +35,7 @@ for zipfile in argv[1:]:
     commit_time = 0
     next_mark = 1
     common_prefix = None
-    mark = dict()
+    mark = {}
 
     zip = ZipFile(zipfile, 'r')
     for name in zip.namelist():
@@ -43,36 +43,51 @@ for zipfile in argv[1:]:
             continue
         info = zip.getinfo(name)
 
-        if commit_time < info.date_time:
-            commit_time = info.date_time
-        if common_prefix == None:
+        commit_time = max(commit_time, info.date_time)
+        if common_prefix is None:
             common_prefix = name[:name.rfind('/') + 1]
         else:
             while not name.startswith(common_prefix):
                 last_slash = common_prefix[:-1].rfind('/') + 1
                 common_prefix = common_prefix[:last_slash]
 
-        mark[name] = ':' + str(next_mark)
+        mark[name] = f':{str(next_mark)}'
         next_mark += 1
 
-        printlines(('blob', 'mark ' + mark[name], \
-                    'data ' + str(info.file_size)))
+        printlines(('blob', f'mark {mark[name]}', f'data {str(info.file_size)}'))
         fast_import.write(zip.read(name) + "\n")
 
-    committer = committer_name + ' <' + committer_email + '> %d +0000' % \
-        mktime(commit_time + (0, 0, 0))
+    committer = f'{committer_name} <{committer_email}' + '> %d +0000' % mktime(
+        commit_time + (0, 0, 0)
+    )
 
-    printlines(('commit ' + branch_ref, 'committer ' + committer, \
-        'data <<EOM', 'Imported from ' + zipfile + '.', 'EOM', \
-        '', 'deleteall'))
+    printlines(
+        (
+            f'commit {branch_ref}',
+            f'committer {committer}',
+            'data <<EOM',
+            f'Imported from {zipfile}.',
+            'EOM',
+            '',
+            'deleteall',
+        )
+    )
 
-    for name in mark.keys():
-        fast_import.write('M 100644 ' + mark[name] + ' ' +
-            name[len(common_prefix):] + "\n")
+    for name, value in mark.items():
+        fast_import.write((f'M 100644 {value} {name[len(common_prefix):]}' + "\n"))
 
-    printlines(('',  'tag ' + path.basename(zipfile), \
-        'from ' + branch_ref, 'tagger ' + committer, \
-        'data <<EOM', 'Package ' + zipfile, 'EOM', ''))
+    printlines(
+        (
+            '',
+            f'tag {path.basename(zipfile)}',
+            f'from {branch_ref}',
+            f'tagger {committer}',
+            'data <<EOM',
+            f'Package {zipfile}',
+            'EOM',
+            '',
+        )
+    )
 
 if fast_import.close():
     exit(1)

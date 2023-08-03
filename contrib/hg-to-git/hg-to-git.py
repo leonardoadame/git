@@ -59,22 +59,21 @@ required:
 #------------------------------------------------------------------------------
 
 def getgitenv(user, date):
-    env = ''
-    elems = re.compile('(.*?)\s+<(.*)>').match(user)
-    if elems:
-        env += 'export GIT_AUTHOR_NAME="%s" ;' % elems.group(1)
-        env += 'export GIT_COMMITTER_NAME="%s" ;' % elems.group(1)
-        env += 'export GIT_AUTHOR_EMAIL="%s" ;' % elems.group(2)
-        env += 'export GIT_COMMITTER_EMAIL="%s" ;' % elems.group(2)
-    else:
-        env += 'export GIT_AUTHOR_NAME="%s" ;' % user
-        env += 'export GIT_COMMITTER_NAME="%s" ;' % user
-        env += 'export GIT_AUTHOR_EMAIL= ;'
-        env += 'export GIT_COMMITTER_EMAIL= ;'
+   env = ''
+   if elems := re.compile('(.*?)\s+<(.*)>').match(user):
+      env += f'export GIT_AUTHOR_NAME="{elems[1]}" ;'
+      env += f'export GIT_COMMITTER_NAME="{elems[1]}" ;'
+      env += f'export GIT_AUTHOR_EMAIL="{elems[2]}" ;'
+      env += f'export GIT_COMMITTER_EMAIL="{elems[2]}" ;'
+   else:
+      env += f'export GIT_AUTHOR_NAME="{user}" ;'
+      env += f'export GIT_COMMITTER_NAME="{user}" ;'
+      env += 'export GIT_AUTHOR_EMAIL= ;'
+      env += 'export GIT_COMMITTER_EMAIL= ;'
 
-    env += 'export GIT_AUTHOR_DATE="%s" ;' % date
-    env += 'export GIT_COMMITTER_DATE="%s" ;' % date
-    return env
+   env += f'export GIT_AUTHOR_DATE="{date}" ;'
+   env += f'export GIT_COMMITTER_DATE="{date}" ;'
+   return env
 
 #------------------------------------------------------------------------------
 
@@ -124,35 +123,27 @@ hgchildren["0"] = ()
 hgparents["0"] = (None, None)
 hgbranch["0"] = "master"
 for cset in range(1, int(tip) + 1):
-    hgchildren[str(cset)] = ()
-    prnts = os.popen('hg log -r %d --template "{parents}"' % cset).read().strip().split(' ')
-    prnts = map(lambda x: x[:x.find(':')], prnts)
-    if prnts[0] != '':
-        parent = prnts[0].strip()
-    else:
-        parent = str(cset - 1)
-    hgchildren[parent] += ( str(cset), )
-    if len(prnts) > 1:
-        mparent = prnts[1].strip()
-        hgchildren[mparent] += ( str(cset), )
-    else:
-        mparent = None
+   hgchildren[str(cset)] = ()
+   prnts = os.popen('hg log -r %d --template "{parents}"' % cset).read().strip().split(' ')
+   prnts = map(lambda x: x[:x.find(':')], prnts)
+   parent = prnts[0].strip() if prnts[0] != '' else str(cset - 1)
+   hgchildren[parent] += ( str(cset), )
+   if len(prnts) > 1:
+       mparent = prnts[1].strip()
+       hgchildren[mparent] += ( str(cset), )
+   else:
+       mparent = None
 
-    hgparents[str(cset)] = (parent, mparent)
+   hgparents[str(cset)] = (parent, mparent)
 
-    if mparent:
+   if mparent:
         # For merge changesets, take either one, preferably the 'master' branch
-        if hgbranch[mparent] == 'master':
-            hgbranch[str(cset)] = 'master'
-        else:
-            hgbranch[str(cset)] = hgbranch[parent]
-    else:
-        # Normal changesets
-        # For first children, take the parent branch, for the others create a new branch
-        if hgchildren[parent][0] == str(cset):
-            hgbranch[str(cset)] = hgbranch[parent]
-        else:
-            hgbranch[str(cset)] = "branch-" + str(cset)
+      hgbranch[str(cset)] = ('master' if hgbranch[mparent] == 'master' else
+                             hgbranch[parent])
+   elif hgchildren[parent][0] == str(cset):
+      hgbranch[str(cset)] = hgbranch[parent]
+   else:
+      hgbranch[str(cset)] = f"branch-{str(cset)}"
 
 if "0" not in hgvers:
     print('creating repository')
@@ -161,85 +152,89 @@ if "0" not in hgvers:
 # loop through every hg changeset
 for cset in range(int(tip) + 1):
 
-    # incremental, already seen
-    if str(cset) in hgvers:
-        continue
-    hgnewcsets += 1
+   # incremental, already seen
+   if str(cset) in hgvers:
+       continue
+   hgnewcsets += 1
 
-    # get info
-    log_data = os.popen('hg log -r %d --template "{tags}\n{date|date}\n{author}\n"' % cset).readlines()
-    tag = log_data[0].strip()
-    date = log_data[1].strip()
-    user = log_data[2].strip()
-    parent = hgparents[str(cset)][0]
-    mparent = hgparents[str(cset)][1]
+   # get info
+   log_data = os.popen('hg log -r %d --template "{tags}\n{date|date}\n{author}\n"' % cset).readlines()
+   tag = log_data[0].strip()
+   date = log_data[1].strip()
+   user = log_data[2].strip()
+   parent = hgparents[str(cset)][0]
+   mparent = hgparents[str(cset)][1]
 
-    #get comment
-    (fdcomment, filecomment) = tempfile.mkstemp()
-    csetcomment = os.popen('hg log -r %d --template "{desc}"' % cset).read().strip()
-    os.write(fdcomment, csetcomment)
-    os.close(fdcomment)
+   #get comment
+   (fdcomment, filecomment) = tempfile.mkstemp()
+   csetcomment = os.popen('hg log -r %d --template "{desc}"' % cset).read().strip()
+   os.write(fdcomment, csetcomment)
+   os.close(fdcomment)
 
-    print('-----------------------------------------')
-    print('cset:', cset)
-    print('branch:', hgbranch[str(cset)])
-    print('user:', user)
-    print('date:', date)
-    print('comment:', csetcomment)
-    if parent:
-        print('parent:', parent)
-    if mparent:
-        print('mparent:', mparent)
-    if tag:
-        print('tag:', tag)
-    print('-----------------------------------------')
+   print('-----------------------------------------')
+   print('cset:', cset)
+   print('branch:', hgbranch[str(cset)])
+   print('user:', user)
+   print('date:', date)
+   print('comment:', csetcomment)
+   if parent:
+       print('parent:', parent)
+   if mparent:
+       print('mparent:', mparent)
+   if tag:
+       print('tag:', tag)
+   print('-----------------------------------------')
 
     # checkout the parent if necessary
-    if cset != 0:
-        if hgbranch[str(cset)] == "branch-" + str(cset):
-            print('creating new branch', hgbranch[str(cset)])
-            os.system('git checkout -b %s %s' % (hgbranch[str(cset)], hgvers[parent]))
-        else:
-            print('checking out branch', hgbranch[str(cset)])
-            os.system('git checkout %s' % hgbranch[str(cset)])
+   if cset != 0:
+      if hgbranch[str(cset)] == f"branch-{str(cset)}":
+         print('creating new branch', hgbranch[str(cset)])
+         os.system(f'git checkout -b {hgbranch[str(cset)]} {hgvers[parent]}')
+      else:
+         print('checking out branch', hgbranch[str(cset)])
+         os.system(f'git checkout {hgbranch[str(cset)]}')
 
     # merge
-    if mparent:
-        if hgbranch[parent] == hgbranch[str(cset)]:
-            otherbranch = hgbranch[mparent]
-        else:
-            otherbranch = hgbranch[parent]
-        print('merging', otherbranch, 'into', hgbranch[str(cset)])
-        os.system(getgitenv(user, date) + 'git merge --no-commit -s ours "" %s %s' % (hgbranch[str(cset)], otherbranch))
+   if mparent:
+      if hgbranch[parent] == hgbranch[str(cset)]:
+          otherbranch = hgbranch[mparent]
+      else:
+          otherbranch = hgbranch[parent]
+      print('merging', otherbranch, 'into', hgbranch[str(cset)])
+      os.system(
+          f'{getgitenv(user, date)}git merge --no-commit -s ours "" {hgbranch[str(cset)]} {otherbranch}'
+      )
 
-    # remove everything except .git and .hg directories
-    os.system('find . \( -path "./.hg" -o -path "./.git" \) -prune -o ! -name "." -print | xargs rm -rf')
+   # remove everything except .git and .hg directories
+   os.system('find . \( -path "./.hg" -o -path "./.git" \) -prune -o ! -name "." -print | xargs rm -rf')
 
-    # repopulate with checkouted files
-    os.system('hg update -C %d' % cset)
+   # repopulate with checkouted files
+   os.system('hg update -C %d' % cset)
 
-    # add new files
-    os.system('git ls-files -x .hg --others | git update-index --add --stdin')
-    # delete removed files
-    os.system('git ls-files -x .hg --deleted | git update-index --remove --stdin')
+   # add new files
+   os.system('git ls-files -x .hg --others | git update-index --add --stdin')
+   # delete removed files
+   os.system('git ls-files -x .hg --deleted | git update-index --remove --stdin')
 
     # commit
-    os.system(getgitenv(user, date) + 'git commit --allow-empty --allow-empty-message -a -F %s' % filecomment)
-    os.unlink(filecomment)
+   os.system(
+       f'{getgitenv(user, date)}git commit --allow-empty --allow-empty-message -a -F {filecomment}'
+   )
+   os.unlink(filecomment)
 
     # tag
-    if tag and tag != 'tip':
-        os.system(getgitenv(user, date) + 'git tag %s' % tag)
+   if tag and tag != 'tip':
+      os.system(f'{getgitenv(user, date)}git tag {tag}')
 
     # delete branch if not used anymore...
-    if mparent and len(hgchildren[str(cset)]):
-        print("Deleting unused branch:", otherbranch)
-        os.system('git branch -d %s' % otherbranch)
+   if mparent and len(hgchildren[str(cset)]):
+      print("Deleting unused branch:", otherbranch)
+      os.system(f'git branch -d {otherbranch}')
 
-    # retrieve and record the version
-    vvv = os.popen('git show --quiet --pretty=format:%H').read()
-    print('record', cset, '->', vvv)
-    hgvers[str(cset)] = vvv
+   # retrieve and record the version
+   vvv = os.popen('git show --quiet --pretty=format:%H').read()
+   print('record', cset, '->', vvv)
+   hgvers[str(cset)] = vvv
 
 if hgnewcsets >= opt_nrepack and opt_nrepack != -1:
     os.system('git repack -a -d')
