@@ -43,7 +43,7 @@ $ git checkout -b <branch> --track <remote>/<branch>
 You could omit `<branch>`, in which case the command degenerates to
 "check out the current branch", which is a glorified no-op with
 rather expensive side-effects to show only the tracking information,
-if exists, for the current branch.
+if it exists, for the current branch.
 
 'git checkout' -b|-B <new-branch> [<start-point>]::
 
@@ -63,7 +63,9 @@ $ git checkout <branch>
 ------------
 +
 that is to say, the branch is not reset/created unless "git checkout" is
-successful.
+successful (e.g., when the branch is in use in another worktree, not
+just the current branch stays the same, but the branch is not reset to
+the start-point, either).
 
 'git checkout' --detach [<branch>]::
 'git checkout' [--detach] <commit>::
@@ -215,7 +217,7 @@ variable.
 	below for details.
 
 --orphan <new-branch>::
-	Create a new 'orphan' branch, named `<new-branch>`, started from
+	Create a new unborn branch, named `<new-branch>`, started from
 	`<start-point>` and switch to it.  The first commit made on this
 	new branch will have no parents and it will be the root of a new
 	history totally disconnected from all the other branches and
@@ -288,10 +290,10 @@ Note that this option uses the no overlay mode by default (see also
 `--overlay`), and currently doesn't support overlay mode.
 
 --ignore-other-worktrees::
-	`git checkout` refuses when the wanted ref is already checked
-	out by another worktree. This option makes it check the ref
-	out anyway. In other words, the ref can be held by more than one
-	worktree.
+	`git checkout` refuses when the wanted branch is already checked
+	out or otherwise in use by another worktree. This option makes
+	it check the branch out anyway. In other words, the branch can
+	be in use by more than one worktree.
 
 --overwrite-ignore::
 --no-overwrite-ignore::

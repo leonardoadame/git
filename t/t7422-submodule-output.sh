@@ -2,7 +2,6 @@
 
 test_description='submodule --cached, --quiet etc. output'
 
-TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 . "$TEST_DIRECTORY"/lib-t3100.sh
 
@@ -166,5 +165,12 @@ do
 		test_cmp expect actual
 	'
 done
+
+test_expect_success !MINGW 'git submodule status --recursive propagates SIGPIPE' '
+	{ git submodule status --recursive 2>err; echo $?>status; } |
+		grep -q X/S &&
+	test_must_be_empty err &&
+	test_match_signal 13 "$(cat status)"
+'
 
 test_done

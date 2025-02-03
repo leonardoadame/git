@@ -7,7 +7,8 @@
 
 struct repository;
 
-#define DEFAULT_DELTA_CACHE_SIZE (256 * 1024 * 1024)
+#define DEFAULT_DELTA_CACHE_SIZE       (256 * 1024 * 1024)
+#define DEFAULT_DELTA_BASE_CACHE_LIMIT (96 * 1024 * 1024)
 
 #define OE_DFS_STATE_BITS	2
 #define OE_DEPTH_BITS		12
@@ -169,6 +170,7 @@ struct packing_data {
 };
 
 void prepare_packing_data(struct repository *r, struct packing_data *pdata);
+void clear_packing_data(struct packing_data *pdata);
 
 /* Protect access to object database */
 static inline void packing_data_lock(struct packing_data *pdata)

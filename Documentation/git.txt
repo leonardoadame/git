@@ -11,9 +11,10 @@ SYNOPSIS
 [verse]
 'git' [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]
     [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]
-    [-p|--paginate|-P|--no-pager] [--no-replace-objects] [--bare]
-    [--git-dir=<path>] [--work-tree=<path>] [--namespace=<name>]
-    [--config-env=<name>=<envvar>] <command> [<args>]
+    [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]
+    [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]
+    [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]
+    <command> [<args>]
 
 DESCRIPTION
 -----------
@@ -96,9 +97,9 @@ foo.bar= ...`) sets `foo.bar` to the empty string which `git config
 	to avoid ambiguity with `<name>` containing one.
 +
 This is useful for cases where you want to pass transitory
-configuration options to git, but are doing so on OS's where
-other processes might be able to read your cmdline
-(e.g. `/proc/self/cmdline`), but not your environ
+configuration options to git, but are doing so on operating systems
+where other processes might be able to read your command line
+(e.g. `/proc/self/cmdline`), but not your environment
 (e.g. `/proc/self/environ`). That behavior is the default on
 Linux, but may not be on your system.
 +
@@ -174,8 +175,24 @@ If you just want to run git as if it was started in `<path>` then use
 	directory.
 
 --no-replace-objects::
-	Do not use replacement refs to replace Git objects. See
-	linkgit:git-replace[1] for more information.
+	Do not use replacement refs to replace Git objects.
+	This is equivalent to exporting the `GIT_NO_REPLACE_OBJECTS`
+	environment variable with any value.
+	See linkgit:git-replace[1] for more information.
+
+--no-lazy-fetch::
+	Do not fetch missing objects from the promisor remote on
+	demand.  Useful together with `git cat-file -e <object>` to
+	see if the object is locally available.
+	This is equivalent to setting the `GIT_NO_LAZY_FETCH`
+	environment variable to `1`.
+
+--no-optional-locks::
+	Do not perform optional operations that require locks. This is
+	equivalent to setting the `GIT_OPTIONAL_LOCKS` to `0`.
+
+--no-advice::
+	Disable all advice hints from being printed.
 
 --literal-pathspecs::
 	Treat pathspecs literally (i.e. no globbing, no pathspec magic).
@@ -198,11 +215,7 @@ If you just want to run git as if it was started in `<path>` then use
 	Add "icase" magic to all pathspec. This is equivalent to setting
 	the `GIT_ICASE_PATHSPECS` environment variable to `1`.
 
---no-optional-locks::
-	Do not perform optional operations that require locks. This is
-	equivalent to setting the `GIT_OPTIONAL_LOCKS` to `0`.
-
---list-cmds=group[,group...]::
+--list-cmds=<group>[,<group>...]::
 	List commands by group. This is an internal/experimental
 	option and may change or be removed in the future. Supported
 	groups are: builtins, parseopt (builtin commands that use
@@ -232,17 +245,17 @@ ancillary user utilities.
 Main porcelain commands
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-include::cmds-mainporcelain.txt[]
+include::{build_dir}/cmds-mainporcelain.txt[]
 
 Ancillary Commands
 ~~~~~~~~~~~~~~~~~~
 Manipulators:
 
-include::cmds-ancillarymanipulators.txt[]
+include::{build_dir}/cmds-ancillarymanipulators.txt[]
 
 Interrogators:
 
-include::cmds-ancillaryinterrogators.txt[]
+include::{build_dir}/cmds-ancillaryinterrogators.txt[]
 
 
 Interacting with Others
@@ -251,7 +264,7 @@ Interacting with Others
 These commands are to interact with foreign SCM and with other
 people via patch over e-mail.
 
-include::cmds-foreignscminterface.txt[]
+include::{build_dir}/cmds-foreignscminterface.txt[]
 
 Reset, restore and revert
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -300,13 +313,13 @@ repositories.
 Manipulation commands
 ~~~~~~~~~~~~~~~~~~~~~
 
-include::cmds-plumbingmanipulators.txt[]
+include::{build_dir}/cmds-plumbingmanipulators.txt[]
 
 
 Interrogation commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
-include::cmds-plumbinginterrogators.txt[]
+include::{build_dir}/cmds-plumbinginterrogators.txt[]
 
 In general, the interrogate commands do not touch the files in
 the working tree.
@@ -315,12 +328,12 @@ the working tree.
 Syncing repositories
 ~~~~~~~~~~~~~~~~~~~~
 
-include::cmds-synchingrepositories.txt[]
+include::{build_dir}/cmds-synchingrepositories.txt[]
 
 The following are helper commands used by the above; end users
 typically do not use them directly.
 
-include::cmds-synchelpers.txt[]
+include::{build_dir}/cmds-synchelpers.txt[]
 
 
 Internal helper commands
@@ -329,14 +342,14 @@ Internal helper commands
 These are internal helper commands used by other commands; end
 users typically do not use them directly.
 
-include::cmds-purehelpers.txt[]
+include::{build_dir}/cmds-purehelpers.txt[]
 
 Guides
 ------
 
 The following documentation pages are guides about Git concepts.
 
-include::cmds-guide.txt[]
+include::{build_dir}/cmds-guide.txt[]
 
 Repository, command and file interfaces
 ---------------------------------------
@@ -345,7 +358,7 @@ This documentation discusses repository and command interfaces which
 users are expected to interact with directly. See `--user-formats` in
 linkgit:git-help[1] for more details on the criteria.
 
-include::cmds-userinterfaces.txt[]
+include::{build_dir}/cmds-userinterfaces.txt[]
 
 File formats, protocols and other developer interfaces
 ------------------------------------------------------
@@ -354,7 +367,7 @@ This documentation discusses file formats, over-the-wire protocols and
 other git developer interfaces. See `--developer-interfaces` in
 linkgit:git-help[1].
 
-include::cmds-developerinterfaces.txt[]
+include::{build_dir}/cmds-developerinterfaces.txt[]
 
 Configuration Mechanism
 -----------------------
@@ -464,6 +477,14 @@ their values the same way as Boolean valued configuration variables, e.g.
 
 Here are the variables:
 
+System
+~~~~~~
+`HOME`::
+	Specifies the path to the user's home directory. On Windows, if
+	unset, Git will set a process environment variable equal to:
+	`$HOMEDRIVE$HOMEPATH` if both `$HOMEDRIVE` and `$HOMEPATH` exist;
+	otherwise `$USERPROFILE` if `$USERPROFILE` exists.
+
 The Git Repository
 ~~~~~~~~~~~~~~~~~~
 These environment variables apply to 'all' core Git commands. Nb: it
@@ -556,6 +577,11 @@ double-quotes and respecting backslash escapes. E.g., the value
 	is always used. The default is "sha1".
 	See `--object-format` in linkgit:git-init[1].
 
+`GIT_DEFAULT_REF_FORMAT`::
+	If this variable is set, the default reference backend format for new
+	repositories will be set to this value. The default is "files".
+	See `--ref-format` in linkgit:git-init[1].
+
 Git Commits
 ~~~~~~~~~~~
 `GIT_AUTHOR_NAME`::
@@ -625,6 +651,16 @@ parameter, <path>.
 +
 For each path `GIT_EXTERNAL_DIFF` is called, two environment variables,
 `GIT_DIFF_PATH_COUNTER` and `GIT_DIFF_PATH_TOTAL` are set.
+
+`GIT_EXTERNAL_DIFF_TRUST_EXIT_CODE`::
+	If this Boolean environment variable is set to true then the
+	`GIT_EXTERNAL_DIFF` command is expected to return exit code
+	0 if it considers the input files to be equal or 1 if it
+	considers them to be different, like `diff(1)`.
+	If it is set to false, which is the default, then the command
+	is expected to return exit code 0 regardless of equality.
+	Any other exit code causes Git to report a fatal error.
+
 
 `GIT_DIFF_PATH_COUNTER`::
 	A 1-based counter incremented by one for every path.
@@ -724,13 +760,12 @@ for further details.
 	waiting for someone with sufficient permissions to fix it.
 
 `GIT_FLUSH`::
-// NEEDSWORK: make it into a usual Boolean environment variable
-	If this environment variable is set to "1", then commands such
+	If this Boolean environment variable is set to true, then commands such
 	as 'git blame' (in incremental mode), 'git rev-list', 'git log',
 	'git check-attr' and 'git check-ignore' will
 	force a flush of the output stream after each record have been
 	flushed. If this
-	variable is set to "0", the output of these commands will be done
+	variable is set to false, the output of these commands will be done
 	using completely buffered I/O.   If this environment variable is
 	not set, Git will choose buffered or record-oriented flushing
 	based on whether stdout appears to be redirected to a file or not.
@@ -838,7 +873,7 @@ of the SID and an optional counter (to avoid filename
 collisions).
 +
 In addition, if the variable is set to
-`af_unix:[<socket_type>:]<absolute-pathname>`, Git will try
+`af_unix:[<socket-type>:]<absolute-pathname>`, Git will try
 to open the path as a Unix Domain Socket.  The socket type
 can be either `stream` or `dgram`.
 +
@@ -868,6 +903,10 @@ for full details.
 	header and packfile URIs. Set this Boolean environment variable to false to prevent this
 	redaction.
 
+`GIT_NO_REPLACE_OBJECTS`::
+	Setting and exporting this environment variable tells Git to
+	ignore replacement refs and do not replace Git objects.
+
 `GIT_LITERAL_PATHSPECS`::
 	Setting this Boolean environment variable to true will cause Git to treat all
 	pathspecs literally, rather than as glob patterns. For example,
@@ -888,6 +927,11 @@ for full details.
 `GIT_ICASE_PATHSPECS`::
 	Setting this Boolean environment variable to true will cause Git to treat all
 	pathspecs as case-insensitive.
+
+`GIT_NO_LAZY_FETCH`::
+	Setting this Boolean environment variable to true tells Git
+	not to lazily fetch missing objects from the promisor remote
+	on demand.
 
 `GIT_REFLOG_ACTION`::
 	When a ref is updated, reflog entries are created to keep
@@ -911,6 +955,16 @@ for full details.
 	should not normally need to set this to `0`, but it may be
 	useful when trying to salvage data from a corrupted repository.
 
+`GIT_COMMIT_GRAPH_PARANOIA`::
+	When loading a commit object from the commit-graph, Git performs an
+	existence check on the object in the object database. This is done to
+	avoid issues with stale commit-graphs that contain references to
+	already-deleted commits, but comes with a performance penalty.
++
+The default is "false", which disables the aforementioned behavior.
+Setting this to "true" enables the existence check so that stale commits
+will never be returned from the commit-graph at the cost of performance.
+
 `GIT_ALLOW_PROTOCOL`::
 	If set to a colon-separated list of protocols, behave as if
 	`protocol.allow` is set to `never`, and each of the listed
@@ -928,7 +982,7 @@ for full details.
 `GIT_PROTOCOL`::
 	For internal use only.  Used in handshaking the wire protocol.
 	Contains a colon ':' separated list of keys with optional values
-	'key[=value]'.  Presence of unknown keys and values must be
+	'<key>[=<value>]'.  Presence of unknown keys and values must be
 	ignored.
 +
 Note that servers may need to be configured to allow this variable to
@@ -981,6 +1035,17 @@ standard output.
 	adequate and support for it is likely to be removed in the
 	foreseeable future (along with the variable).
 
+`GIT_ADVICE`::
+	If set to `0`, then disable all advice messages. These messages are
+	intended to provide hints to human users that may help them get out of
+	problematic situations or take advantage of new features. Users can
+	disable individual messages using the `advice.*` config keys. These
+	messages may be disruptive to tools that execute Git processes, so this
+	variable is available to disable the messages. (The `--no-advice`
+	global option is also available, but old Git versions may fail when
+	this option is not understood. The environment variable will be ignored
+	by Git versions that do not understand it.)
+
 Discussion[[Discussion]]
 ------------------------
 
@@ -1015,10 +1080,11 @@ When first created, objects are stored in individual files, but for
 efficiency may later be compressed together into "pack files".
 
 Named pointers called refs mark interesting points in history.  A ref
-may contain the SHA-1 name of an object or the name of another ref.  Refs
-with names beginning `ref/head/` contain the SHA-1 name of the most
+may contain the SHA-1 name of an object or the name of another ref (the
+latter is called a "symbolic ref").
+Refs with names beginning `refs/head/` contain the SHA-1 name of the most
 recent commit (or "head") of a branch under development.  SHA-1 names of
-tags of interest are stored under `ref/tags/`.  A special ref named
+tags of interest are stored under `refs/tags/`.  A symbolic ref named
 `HEAD` contains the name of the currently checked-out branch.
 
 The index file is initialized with a list of all paths and, for each
@@ -1033,6 +1099,37 @@ content stored in the index.
 The index is also capable of storing multiple entries (called "stages")
 for a given pathname.  These stages are used to hold the various
 unmerged version of a file when a merge is in progress.
+
+SECURITY
+--------
+
+Some configuration options and hook files may cause Git to run arbitrary
+shell commands. Because configuration and hooks are not copied using
+`git clone`, it is generally safe to clone remote repositories with
+untrusted content, inspect them with `git log`, and so on.
+
+However, it is not safe to run Git commands in a `.git` directory (or
+the working tree that surrounds it) when that `.git` directory itself
+comes from an untrusted source. The commands in its config and hooks
+are executed in the usual way.
+
+By default, Git will refuse to run when the repository is owned by
+someone other than the user running the command. See the entry for
+`safe.directory` in linkgit:git-config[1]. While this can help protect
+you in a multi-user environment, note that you can also acquire
+untrusted repositories that are owned by you (for example, if you
+extract a zip file or tarball from an untrusted source). In such cases,
+you'd need to "sanitize" the untrusted repository first.
+
+If you have an untrusted `.git` directory, you should first clone it
+with `git clone --no-local` to obtain a clean copy. Git does restrict
+the set of options and hooks that will be run by `upload-pack`, which
+handles the server side of a clone or fetch, but beware that the
+surface area for attack against `upload-pack` is large, so this does
+carry some risk. The safest thing is to serve the repository as an
+unprivileged user (either via linkgit:git-daemon[1], ssh, or using
+other tools to change user ids). See the discussion in the `SECURITY`
+section of linkgit:git-upload-pack[1].
 
 FURTHER DOCUMENTATION
 ---------------------
@@ -1061,7 +1158,7 @@ Authors
 -------
 Git was started by Linus Torvalds, and is currently maintained by Junio
 C Hamano. Numerous contributions have come from the Git mailing list
-<git@vger.kernel.org>.  http://www.openhub.net/p/git/contributors/summary
+<git@vger.kernel.org>.  https://openhub.net/p/git/contributors/summary
 gives you a more complete list of contributors.
 
 If you have a clone of git.git itself, the

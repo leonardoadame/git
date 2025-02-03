@@ -8,10 +8,14 @@ git-show-ref - List references in a local repository
 SYNOPSIS
 --------
 [verse]
-'git show-ref' [-q | --quiet] [--verify] [--head] [-d | --dereference]
-	     [-s | --hash[=<n>]] [--abbrev[=<n>]] [--tags]
-	     [--heads] [--] [<pattern>...]
+'git show-ref' [--head] [-d | --dereference]
+	     [-s | --hash[=<n>]] [--abbrev[=<n>]] [--branches] [--tags]
+	     [--] [<pattern>...]
+'git show-ref' --verify [-q | --quiet] [-d | --dereference]
+	     [-s | --hash[=<n>]] [--abbrev[=<n>]]
+	     [--] [<ref>...]
 'git show-ref' --exclude-existing[=<pattern>]
+'git show-ref' --exists <ref>
 
 DESCRIPTION
 -----------
@@ -27,6 +31,10 @@ The `--exclude-existing` form is a filter that does the inverse. It reads
 refs from stdin, one ref per line, and shows those that don't exist in
 the local repository.
 
+The `--exists` form can be used to check for the existence of a single
+references. This form does not verify whether the reference resolves to an
+actual object.
+
 Use of this utility is encouraged in favor of directly accessing files under
 the `.git` directory.
 
@@ -37,12 +45,14 @@ OPTIONS
 
 	Show the HEAD reference, even if it would normally be filtered out.
 
---heads::
+--branches::
 --tags::
 
-	Limit to "refs/heads" and "refs/tags", respectively.  These options
+	Limit to local branches and local tags, respectively.  These options
 	are not mutually exclusive; when given both, references stored in
-	"refs/heads" and "refs/tags" are displayed.
+	"refs/heads" and "refs/tags" are displayed.  Note that `--heads`
+	is a deprecated synonym for `--branches` and may be removed
+	in the future.
 
 -d::
 --dereference::
@@ -62,6 +72,12 @@ OPTIONS
 	Aside from returning an error code of 1, it will also print an error
 	message if `--quiet` was not specified.
 
+--exists::
+
+	Check whether the given reference exists. Returns an exit code of 0 if
+	it does, 2 if it is missing, and 1 in case looking up the reference
+	failed with an error other than the reference being missing.
+
 --abbrev[=<n>]::
 
 	Abbreviate the object name.  When using `--hash`, you do
@@ -70,8 +86,8 @@ OPTIONS
 -q::
 --quiet::
 
-	Do not print any results to stdout. When combined with `--verify`, this
-	can be used to silently check if a reference exists.
+	Do not print any results to stdout. Can be used with `--verify` to
+	silently check if a reference exists.
 
 --exclude-existing[=<pattern>]::
 
@@ -125,7 +141,7 @@ When using `--hash` (and not `--dereference`), the output is in the format:
 For example,
 
 -----------------------------------------------------------------------------
-$ git show-ref --heads --hash
+$ git show-ref --branches --hash
 2e3ba0114a1f52b47df29743d6915d056be13278
 185008ae97960c8d551adcd9e23565194651b5d1
 03adf42c988195b50e1a1935ba5fcbc39b2b029b
@@ -144,7 +160,7 @@ use:
 -----------------------------------------------------------------------------
 
 This will show "refs/heads/master" but also "refs/remote/other-repo/master",
-if such references exists.
+if such references exist.
 
 When using the `--verify` flag, the command requires an exact path:
 
@@ -169,8 +185,8 @@ to check whether a particular branch exists or not (notice how we don't
 actually want to show any results, and we want to use the full refname for it
 in order to not trigger the problem with ambiguous partial matches).
 
-To show only tags, or only proper branch heads, use `--tags` and/or `--heads`
-respectively (using both means that it shows tags and heads, but not other
+To show only tags, or only proper branch heads, use `--tags` and/or `--branches`
+respectively (using both means that it shows tags and branches, but not other
 random references under the refs/ subdirectory).
 
 To do automatic tag object dereferencing, use the `-d` or `--dereference`

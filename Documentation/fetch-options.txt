@@ -1,5 +1,7 @@
---all::
-	Fetch all remotes.
+--[no-]all::
+	Fetch all remotes, except for the ones that has the
+	`remote.<name>.skipFetchAll` configuration variable set.
+	This overrides the configuration variable fetch.all`.
 
 -a::
 --append::
@@ -27,7 +29,7 @@
 	Deepen or shorten the history of a shallow repository to
 	include all reachable commits after <date>.
 
---shallow-exclude=<revision>::
+--shallow-exclude=<ref>::
 	Deepen or shorten the history of a shallow repository to
 	exclude commits reachable from a specified remote branch or tag.
 	This option can be specified multiple times.
@@ -43,7 +45,7 @@ the current repository has the same history as the source repository.
 --update-shallow::
 	By default when fetching from a shallow repository,
 	`git fetch` refuses refs that require updating
-	.git/shallow. This option updates .git/shallow and accept such
+	.git/shallow. This option updates .git/shallow and accepts such
 	refs.
 
 --negotiation-tip=<commit|glob>::
@@ -96,7 +98,7 @@ endif::git-pull[]
 
 -f::
 --force::
-	When 'git fetch' is used with `<src>:<dst>` refspec it may
+	When 'git fetch' is used with `<src>:<dst>` refspec, it may
 	refuse to update the local branch as discussed
 ifdef::git-pull[]
 	in the `<refspec>` part of the linkgit:git-fetch[1]
@@ -201,7 +203,7 @@ endif::git-pull[]
 	destination of an explicit refspec; see `--prune`).
 
 ifndef::git-pull[]
---recurse-submodules[=yes|on-demand|no]::
+--recurse-submodules[=(yes|on-demand|no)]::
 	This option controls if and under what conditions new commits of
 	submodules should be fetched too. When recursing through submodules,
 	`git fetch` always attempts to fetch "changed" submodules, that is, a
@@ -303,6 +305,9 @@ endif::git-pull[]
 	unknown ones, is server-specific.
 	When multiple `--server-option=<option>` are given, they are all
 	sent to the other side in the order listed on the command line.
+	When no `--server-option=<option>` is given from the command line,
+	the values of configuration variable `remote.<name>.serverOption`
+	are used instead.
 
 --show-forced-updates::
 	By default, git checks if a branch is force-updated during

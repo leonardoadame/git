@@ -4,7 +4,6 @@ test_description='fetch/receive strict mode'
 GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME=main
 export GIT_TEST_DEFAULT_INITIAL_BRANCH_NAME
 
-TEST_PASSES_SANITIZE_LEAK=true
 . ./test-lib.sh
 
 test_expect_success 'setup and inject "corrupt or missing" object' '
@@ -144,7 +143,7 @@ test_expect_success 'setup bogus commit' '
 
 test_expect_success 'fsck with no skipList input' '
 	test_must_fail git fsck 2>err &&
-	test_i18ngrep "missingEmail" err
+	test_grep "missingEmail" err
 '
 
 test_expect_success 'setup sorted and unsorted skipLists' '
@@ -168,10 +167,12 @@ test_expect_success 'fsck with unsorted skipList' '
 
 test_expect_success 'fsck with invalid or bogus skipList input' '
 	git -c fsck.skipList=/dev/null -c fsck.missingEmail=ignore fsck &&
+	test_must_fail git -c fsck.skipList -c fsck.missingEmail=ignore fsck 2>err &&
+	test_grep "unable to parse '\'fsck.skiplist\'' from command-line config" err &&
 	test_must_fail git -c fsck.skipList=does-not-exist -c fsck.missingEmail=ignore fsck 2>err &&
-	test_i18ngrep "could not open.*: does-not-exist" err &&
+	test_grep "could not open.*: does-not-exist" err &&
 	test_must_fail git -c fsck.skipList=.git/config -c fsck.missingEmail=ignore fsck 2>err &&
-	test_i18ngrep "invalid object name: \[core\]" err
+	test_grep "invalid object name: " err
 '
 
 test_expect_success 'fsck with other accepted skipList input (comments & empty lines)' '
@@ -180,14 +181,14 @@ test_expect_success 'fsck with other accepted skipList input (comments & empty l
 	$(test_oid 001)
 	EOF
 	test_must_fail git -c fsck.skipList=SKIP.with-comment fsck 2>err-with-comment &&
-	test_i18ngrep "missingEmail" err-with-comment &&
+	test_grep "missingEmail" err-with-comment &&
 	cat >SKIP.with-empty-line <<-EOF &&
 	$(test_oid 001)
 
 	$(test_oid 002)
 	EOF
 	test_must_fail git -c fsck.skipList=SKIP.with-empty-line fsck 2>err-with-empty-line &&
-	test_i18ngrep "missingEmail" err-with-empty-line
+	test_grep "missingEmail" err-with-empty-line
 '
 
 test_expect_success 'fsck no garbage output from comments & empty lines errors' '
@@ -198,7 +199,7 @@ test_expect_success 'fsck no garbage output from comments & empty lines errors' 
 test_expect_success 'fsck with invalid abbreviated skipList input' '
 	echo $commit | test_copy_bytes 20 >SKIP.abbreviated &&
 	test_must_fail git -c fsck.skipList=SKIP.abbreviated fsck 2>err-abbreviated &&
-	test_i18ngrep "^fatal: invalid object name: " err-abbreviated
+	test_grep "^fatal: invalid object name: " err-abbreviated
 '
 
 test_expect_success 'fsck with exhaustive accepted skipList input (various types of comments etc.)' '
@@ -212,6 +213,11 @@ test_expect_success 'fsck with exhaustive accepted skipList input (various types
 	echo "  $(test_oid 001)" >>SKIP.exhaustive &&
 	git -c fsck.skipList=SKIP.exhaustive fsck 2>err &&
 	test_must_be_empty err
+'
+
+test_expect_success 'receive-pack with missing receive.fsck.skipList path' '
+	test_must_fail git -c receive.fsck.skipList receive-pack dst 2>err &&
+	test_grep "unable to parse '\'receive.fsck.skiplist\'' from command-line config" err
 '
 
 test_expect_success 'push with receive.fsck.skipList' '
@@ -231,10 +237,10 @@ test_expect_success 'push with receive.fsck.skipList' '
 	test_must_fail git push --porcelain dst bogus &&
 	git --git-dir=dst/.git config receive.fsck.skipList does-not-exist &&
 	test_must_fail git push --porcelain dst bogus 2>err &&
-	test_i18ngrep "could not open.*: does-not-exist" err &&
+	test_grep "could not open.*: does-not-exist" err &&
 	git --git-dir=dst/.git config receive.fsck.skipList config &&
 	test_must_fail git push --porcelain dst bogus 2>err &&
-	test_i18ngrep "invalid object name: \[core\]" err &&
+	test_grep "invalid object name: " err &&
 
 	git --git-dir=dst/.git config receive.fsck.skipList SKIP &&
 	git push --porcelain dst bogus
@@ -256,14 +262,17 @@ test_expect_success 'fetch with fetch.fsck.skipList' '
 	test_must_fail git --git-dir=dst/.git fetch "file://$(pwd)" $refspec &&
 
 	# Invalid and/or bogus skipList input
+	test_must_fail git --git-dir=dst/.git -c fetch.fsck.skipList fetch \
+		"file://$(pwd)" $refspec 2>err &&
+	test_grep "unable to parse '\'fetch.fsck.skiplist\'' from command-line config" err &&
 	git --git-dir=dst/.git config fetch.fsck.skipList /dev/null &&
 	test_must_fail git --git-dir=dst/.git fetch "file://$(pwd)" $refspec &&
 	git --git-dir=dst/.git config fetch.fsck.skipList does-not-exist &&
 	test_must_fail git --git-dir=dst/.git fetch "file://$(pwd)" $refspec 2>err &&
-	test_i18ngrep "could not open.*: does-not-exist" err &&
+	test_grep "could not open.*: does-not-exist" err &&
 	git --git-dir=dst/.git config fetch.fsck.skipList dst/.git/config &&
 	test_must_fail git --git-dir=dst/.git fetch "file://$(pwd)" $refspec 2>err &&
-	test_i18ngrep "invalid object name: \[core\]" err &&
+	test_grep "invalid object name: " err &&
 
 	git --git-dir=dst/.git config fetch.fsck.skipList dst/.git/SKIP &&
 	git --git-dir=dst/.git fetch "file://$(pwd)" $refspec
@@ -271,7 +280,7 @@ test_expect_success 'fetch with fetch.fsck.skipList' '
 
 test_expect_success 'fsck.<unknownmsg-id> dies' '
 	test_must_fail git -c fsck.whatEver=ignore fsck 2>err &&
-	test_i18ngrep "Unhandled message id: whatever" err
+	test_grep "Unhandled message id: whatever" err
 '
 
 test_expect_success 'push with receive.fsck.missingEmail=warn' '
@@ -293,7 +302,7 @@ test_expect_success 'push with receive.fsck.missingEmail=warn' '
 		receive.fsck.missingEmail warn &&
 	git push --porcelain dst bogus >act 2>&1 &&
 	grep "missingEmail" act &&
-	test_i18ngrep "skipping unknown msg id.*whatever" act &&
+	test_grep "skipping unknown msg id.*whatever" act &&
 	git --git-dir=dst/.git branch -D bogus &&
 	git --git-dir=dst/.git config --add \
 		receive.fsck.missingEmail ignore &&
@@ -321,7 +330,7 @@ test_expect_success 'fetch with fetch.fsck.missingEmail=warn' '
 		fetch.fsck.missingEmail warn &&
 	git --git-dir=dst/.git fetch "file://$(pwd)" $refspec >act 2>&1 &&
 	grep "missingEmail" act &&
-	test_i18ngrep "Skipping unknown msg id.*whatever" act &&
+	test_grep "Skipping unknown msg id.*whatever" act &&
 	rm -rf dst &&
 	git init dst &&
 	git --git-dir=dst/.git config fetch.fsckobjects true &&

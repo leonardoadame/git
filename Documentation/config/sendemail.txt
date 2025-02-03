@@ -8,7 +8,7 @@ sendemail.smtpEncryption::
 	See linkgit:git-send-email[1] for description.  Note that this
 	setting is not subject to the 'identity' mechanism.
 
-sendemail.smtpsslcertpath::
+sendemail.smtpSSLCertPath::
 	Path to ca-certificates (either a directory or a single file).
 	Set it to an empty string to disable certificate verification.
 
@@ -30,13 +30,28 @@ sendemail.confirm::
 	in the linkgit:git-send-email[1] documentation for the meaning of these
 	values.
 
+sendemail.mailmap::
+	If true, makes linkgit:git-send-email[1] assume `--mailmap`,
+	otherwise assume `--no-mailmap`. False by default.
+
+sendemail.mailmap.file::
+	The location of a linkgit:git-send-email[1] specific augmenting
+	mailmap file. The default mailmap and `mailmap.file` are loaded
+	first. Thus, entries in this file take precedence over entries in
+	the default mailmap locations. See linkgit:gitmailmap[5].
+
+sendemail.mailmap.blob::
+	Like `sendemail.mailmap.file`, but consider the value as a reference
+	to a blob in the repository. Entries in `sendemail.mailmap.file`
+	take precedence over entries here. See linkgit:gitmailmap[5].
+
 sendemail.aliasesFile::
 	To avoid typing long email addresses, point this to one or more
 	email aliases files.  You must also supply `sendemail.aliasFileType`.
 
 sendemail.aliasFileType::
 	Format of the file(s) specified in sendemail.aliasesFile. Must be
-	one of 'mutt', 'mailrc', 'pine', 'elm', or 'gnus', or 'sendmail'.
+	one of 'mutt', 'mailrc', 'pine', 'elm', 'gnus', or 'sendmail'.
 +
 What an alias file in each format looks like can be found in
 the documentation of the email program of the same name. The
@@ -62,12 +77,12 @@ sendemail.chainReplyTo::
 sendemail.envelopeSender::
 sendemail.from::
 sendemail.headerCmd::
-sendemail.signedoffbycc::
+sendemail.signedOffByCc::
 sendemail.smtpPass::
-sendemail.suppresscc::
+sendemail.suppressCc::
 sendemail.suppressFrom::
 sendemail.to::
-sendemail.tocmd::
+sendemail.toCmd::
 sendemail.smtpDomain::
 sendemail.smtpServer::
 sendemail.smtpServerPort::
@@ -81,8 +96,8 @@ sendemail.xmailer::
 	linkgit:git-send-email[1] command-line options. See its
 	documentation for details.
 
-sendemail.signedoffcc (deprecated)::
-	Deprecated alias for `sendemail.signedoffbycc`.
+sendemail.signedOffCc (deprecated)::
+	Deprecated alias for `sendemail.signedOffByCc`.
 
 sendemail.smtpBatchSize::
 	Number of messages to be sent per connection, after that a relogin
@@ -91,7 +106,7 @@ sendemail.smtpBatchSize::
 	See also the `--batch-size` option of linkgit:git-send-email[1].
 
 sendemail.smtpReloginDelay::
-	Seconds wait before reconnecting to smtp server.
+	Seconds to wait before reconnecting to the smtp server.
 	See also the `--relogin-delay` option of linkgit:git-send-email[1].
 
 sendemail.forbidSendmailVariables::

@@ -5,10 +5,6 @@ test_description='exercise basic bitmap functionality'
 . ./test-lib.sh
 . "$TEST_DIRECTORY"/lib-bitmap.sh
 
-# t5310 deals only with single-pack bitmaps, so don't write MIDX bitmaps in
-# their place.
-GIT_TEST_MULTI_PACK_INDEX_WRITE_BITMAP=0
-
 # Likewise, allow individual tests to control whether or not they use
 # the boundary-based traversal.
 sane_unset GIT_TEST_PACK_USE_BITMAP_BOUNDARY_TRAVERSAL
@@ -271,7 +267,7 @@ test_bitmap_cases () {
 		mv -f $bitmap.tmp $bitmap &&
 		git rev-list --use-bitmap-index --count --all >actual 2>stderr &&
 		test_cmp expect actual &&
-		test_i18ngrep corrupt.ewah.bitmap stderr
+		test_grep corrupt.ewah.bitmap stderr
 	'
 
 	test_expect_success 'truncated bitmap fails gracefully (cache)' '
@@ -284,7 +280,7 @@ test_bitmap_cases () {
 		mv -f $bitmap.tmp $bitmap &&
 		git rev-list --use-bitmap-index --count --all >actual 2>stderr &&
 		test_cmp expect actual &&
-		test_i18ngrep corrupted.bitmap.index stderr
+		test_grep corrupted.bitmap.index stderr
 	'
 
 	# Create a state of history with these properties:
@@ -471,7 +467,7 @@ sane_unset GIT_TEST_PACK_USE_BITMAP_BOUNDARY_TRAVERSAL
 test_expect_success 'incremental repack fails when bitmaps are requested' '
 	test_commit more-1 &&
 	test_must_fail git repack -d 2>err &&
-	test_i18ngrep "Incremental repacks are incompatible with bitmap" err
+	test_grep "Incremental repacks are incompatible with bitmap" err
 '
 
 test_expect_success 'incremental repack can disable bitmaps' '
@@ -506,6 +502,18 @@ test_expect_success 'boundary-based traversal is used when requested' '
 	done
 '
 
+test_expect_success 'left-right not confused by bitmap index' '
+	git rev-list --left-right other...HEAD >expect &&
+	git rev-list --use-bitmap-index --left-right other...HEAD >actual &&
+	test_cmp expect actual
+'
+
+test_expect_success 'left-right count not confused by bitmap-index' '
+	git rev-list --left-right --count other...HEAD >expect &&
+	git rev-list --use-bitmap-index --left-right --count other...HEAD >actual &&
+	test_cmp expect actual
+'
+
 test_bitmap_cases "pack.writeBitmapLookupTable"
 
 test_expect_success 'verify writing bitmap lookup table when enabled' '
@@ -524,7 +532,7 @@ test_expect_success 'truncated bitmap fails gracefully (lookup table)' '
 	mv -f $bitmap.tmp $bitmap &&
 	git rev-list --use-bitmap-index --count --all >actual 2>stderr &&
 	test_cmp expect actual &&
-	test_i18ngrep corrupted.bitmap.index stderr
+	test_grep corrupted.bitmap.index stderr
 '
 
 test_done

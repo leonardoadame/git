@@ -37,12 +37,12 @@ COMMANDS
 	argument.  Normally this command initializes the current
 	directory.
 
--T<trunk_subdir>;;
---trunk=<trunk_subdir>;;
--t<tags_subdir>;;
---tags=<tags_subdir>;;
--b<branches_subdir>;;
---branches=<branches_subdir>;;
+-T<trunk-subdir>;;
+--trunk=<trunk-subdir>;;
+-t<tags-subdir>;;
+--tags=<tags-subdir>;;
+-b<branches-subdir>;;
+--branches=<branches-subdir>;;
 -s;;
 --stdlayout;;
 	These are optional command-line options for init.  Each of
@@ -431,14 +431,14 @@ Any other arguments are passed directly to 'git log'
 	independently of 'git svn' functions.
 
 'create-ignore'::
-	Recursively finds the svn:ignore property on directories and
-	creates matching .gitignore files. The resulting files are staged to
-	be committed, but are not committed. Use -r/--revision to refer to a
-	specific revision.
+	Recursively finds the svn:ignore and svn:global-ignores properties
+	on directories and creates matching .gitignore files. The resulting
+	files are staged to be committed, but are not committed. Use
+	-r/--revision to refer to a specific revision.
 
 'show-ignore'::
-	Recursively finds and lists the svn:ignore property on
-	directories.  The output is suitable for appending to
+	Recursively finds and lists the svn:ignore and svn:global-ignores
+	properties on directories. The output is suitable for appending to
 	the $GIT_DIR/info/exclude file.
 
 'mkdirs'::
@@ -726,9 +726,9 @@ ADVANCED OPTIONS
 	when tracking a single URL.  The 'log' and 'dcommit' commands
 	no longer require this switch as an argument.
 
--R<remote name>::
---svn-remote <remote name>::
-	Specify the [svn-remote "<remote name>"] section to use,
+-R<remote-name>::
+--svn-remote <remote-name>::
+	Specify the [svn-remote "<remote-name>"] section to use,
 	this allows SVN multiple repositories to be tracked.
 	Default: "svn"
 
@@ -871,7 +871,7 @@ Tracking and contributing to the trunk of a Subversion-managed project
 # Now commit your changes (that were committed previously using Git) to SVN,
 # as well as automatically updating your working HEAD:
 	git svn dcommit
-# Append svn:ignore settings to the default Git exclude file:
+# Append svn:ignore and svn:global-ignores settings to the default Git exclude file:
 	git svn show-ignore >> .git/info/exclude
 ------------------------------------------------------------------------
 

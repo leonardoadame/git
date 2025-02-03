@@ -69,7 +69,7 @@ be in a separate packet, and the list must end with a flush packet.
 
 --upload-pack=<git-upload-pack>::
 	Use this to specify the path to 'git-upload-pack' on the
-	remote side, if is not found on your $PATH.
+	remote side, if it is not found on your $PATH.
 	Installations of sshd ignores the user's environment
 	setup scripts for login shells (e.g. .bash_profile) and
 	your privately installed git may not be found on the system
@@ -91,7 +91,7 @@ be in a separate packet, and the list must end with a flush packet.
 	Deepen or shorten the history of a shallow repository to
 	include all reachable commits after <date>.
 
---shallow-exclude=<revision>::
+--shallow-exclude=<ref>::
 	Deepen or shorten the history of a shallow repository to
 	exclude commits reachable from a specified remote branch or tag.
 	This option can be specified multiple times.

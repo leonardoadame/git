@@ -10,7 +10,8 @@ SYNOPSIS
 [verse]
 'git range-diff' [--color=[<when>]] [--no-color] [<diff-options>]
 	[--no-dual-color] [--creation-factor=<factor>]
-	[--left-only | --right-only]
+	[--left-only | --right-only] [--diff-merges=<format>]
+	[--remerge-diff]
 	( <range1> <range2> | <rev1>...<rev2> | <base> <rev1> <rev2> )
 	[[--] <path>...]
 
@@ -70,7 +71,7 @@ to revert to color all lines according to the outer diff markers
 	Defaults to 60. Try a larger value if `git range-diff` erroneously
 	considers a large change a total rewrite (deletion of one commit
 	and addition of another), and a smaller one in the reverse case.
-	See the ``Algorithm`` section below for an explanation why this is
+	See the ``Algorithm`` section below for an explanation of why this is
 	needed.
 
 --left-only::
@@ -80,6 +81,20 @@ to revert to color all lines according to the outer diff markers
 --right-only::
 	Suppress commits that are missing from the second specified range
 	(or the "right range" when using the `<rev1>...<rev2>` format).
+
+--diff-merges=<format>::
+	Instead of ignoring merge commits, generate diffs for them using the
+	corresponding `--diff-merges=<format>` option of linkgit:git-log[1],
+	and include them in the comparison.
++
+Note: In the common case, the `remerge` mode will be the most natural one
+to use, as it shows only the diff on top of what Git's merge machinery would
+have produced. In other words, if a merge commit is the result of a
+non-conflicting `git merge`, the `remerge` mode will represent it with an empty
+diff.
+
+--remerge-diff::
+	Convenience option, equivalent to `--diff-merges=remerge`.
 
 --[no-]notes[=<ref>]::
 	This flag is passed to the `git log` program
@@ -166,7 +181,7 @@ A typical output of `git range-diff` would look like this:
 
 In this example, there are 3 old and 3 new commits, where the developer
 removed the 3rd, added a new one before the first two, and modified the
-commit message of the 2nd commit as well its diff.
+commit message of the 2nd commit as well as its diff.
 
 When the output goes to a terminal, it is color-coded by default, just
 like regular `git diff`'s output. In addition, the first line (adding a
